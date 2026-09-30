@@ -1,0 +1,35 @@
+const $=id=>document.getElementById(id);
+const products=[
+ {id:'celsius',name:'Celsius',category:'Energy drink',image:'celsius.jpg',tint:'#fff7e7'},
+ {id:'alani',name:'Alani Nu',category:'Energy drink',image:'alani.jpg',tint:'#f2e4fc',color:'#824fac'},
+ {id:'pibb',name:'Mr. Pibb Zero Sugar',category:'Zero sugar soda',image:'pibb.jpg',tint:'#f5e8e6',color:'#821c27'},
+ {id:'mighty',name:'Mighty Spark Chicken Snack Sticks',category:'Savory snack',image:'mighty-spark.jpg',tint:'#eaf5e8'},
+ {id:'redbull',name:'Red Bull',category:'Energy drink',image:'redbull.jpg',tint:'#edf1ff',color:'#d53644'},
+ {id:'olipop',name:'Olipop',category:'Soda',image:'olipop.jpg',tint:'#edf5e8',color:'#386443'},
+ {id:'claude',name:'Claude 1 Month',category:'Digital offer · One month',image:'claude.png',tint:'#faf1eb'},
+ {id:'dove',name:'Dove Baby',category:'Baby care',image:'dove.jpg',tint:'#edf7fb',color:'#315179'},
+ {id:'bumblebee',name:'Bumble Bee',category:'Seafood',display:'Bumble Bee',tint:'#fff5cf',color:'#283d76'},
+ {id:'martie',name:'Martie Free Item',category:'Free item offer',image:'martie.jpg',tint:'#ebd5f5'},
+ {id:'poppi',name:'Poppi',category:'Soda',image:'poppi.jpg',tint:'#ffedf1',color:'#ce4269'},
+ {id:'elf',name:'e.l.f.',category:'Beauty',image:'elf.png',tint:'#f1edff',color:'#251d3c'},
+ {id:'starface',name:'Starface',category:'Pimple patches',image:'starface.jpg',tint:'#fff5a7',color:'#292324'}
+];
+// Every card is an illustrative demo offer, not confirmed inventory or a partnership.
+const chosen=new Set();let plan=null;let completed=false;
+function selected(){return products.filter(p=>chosen.has(p.id))}
+function go(page){location.hash=page;renderRoute()}
+function textEl(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=text;return e}
+function renderOffers(){for(const p of products){const card=document.createElement('label');card.className='offer-card';card.style.setProperty('--tint',p.tint);card.style.setProperty('--brand-color',p.color||'#222');const box=document.createElement('input');box.type='checkbox';box.value=p.id;box.id='offer-'+p.id;box.setAttribute('aria-label','Select '+p.name);box.addEventListener('change',()=>{box.checked?chosen.add(p.id):chosen.delete(p.id);plan=null;resetGive();updateSelection()});card.append(box);const art=textEl('div','product-art','');if(p.image){const image=document.createElement('img');image.src='/assets/'+p.image;image.alt=p.name;art.append(image)}else art.append(textEl('span','brand-type',p.display));card.append(art);const info=textEl('span','product-info','');info.append(textEl('strong','',p.name),textEl('small','',p.category));card.append(info);$('offer-grid').append(card)}}
+function updateSelection(){const n=chosen.size;$('selection-count').textContent=n+' brand'+(n===1?'':'s')+' selected';$('enter').disabled=n===0;$('selected-brands').replaceChildren(...selected().map(p=>textEl('span','brand-chip',p.name)))}
+function resetGive(){completed=false;$('give-swipe').value=0;$('give-swipe').disabled=false;$('give-label').textContent='Swipe to Sample and Give';$('completed').hidden=true}
+function renderSummary(){if(!plan)return;const date=new Date(plan.date+'T12:00:00');$('summary-date').textContent=date.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});$('summary-quantity').textContent=plan.quantity.toLocaleString()+' per brand';$('summary-total').textContent=(plan.quantity*chosen.size).toLocaleString();$('summary-brands').replaceChildren(...selected().map(p=>{const row=textEl('div','summary-row','');row.append(textEl('span','',p.name),textEl('small','',plan.quantity+' '+(p.id==='claude'?'digital offers':'samples')));return row}));$('summary-notes').hidden=!plan.note;$('summary-notes').querySelector('p').textContent=plan.note;resetGive()}
+function renderRoute(){let page=location.hash.slice(1)||'welcome';if(!['welcome','offers','plan','summary'].includes(page))page='welcome';if(page==='plan'&&!chosen.size)page='offers';if(page==='summary'&&(!plan||!chosen.size))page=chosen.size?'plan':'offers';$('welcome').hidden=page!=='welcome';$('flow').hidden=page==='welcome';for(const p of ['offers','plan','summary']){$(p).hidden=page!==p;$('step-'+p).classList.toggle('active',page===p)}if(page==='welcome')$('entry-swipe').value=0;if(page==='plan')updateSelection();window.scrollTo(0,0)}
+renderOffers();updateSelection();renderRoute();window.addEventListener('hashchange',renderRoute);
+$('entry-swipe').addEventListener('input',e=>{if(Number(e.target.value)>=95)go('offers')});$('entry-swipe').addEventListener('change',e=>{if(Number(e.target.value)<95)e.target.value=0});$('explore').addEventListener('click',()=>go('offers'));$('home').addEventListener('click',()=>go('welcome'));$('enter').addEventListener('click',()=>{if(chosen.size)go('plan')});$('back-offers').addEventListener('click',()=>go('offers'));$('back-plan').addEventListener('click',()=>go('plan'));
+const today=new Date();const localDate=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');$('ship-date').min=localDate;
+$('plan-form').addEventListener('submit',e=>{e.preventDefault();if(!$('plan-form').reportValidity()||!chosen.size)return;const quantity=Number($('quantity').value);if(!Number.isInteger(quantity)||quantity<1||quantity>10000)return;plan={date:$('ship-date').value,quantity,note:$('request').value.trim(),sponsor:'Make-A-Wish Foundation'};renderSummary();go('summary')});
+$('give-swipe').addEventListener('input',e=>{if(Number(e.target.value)>=95&&plan&&!completed){completed=true;e.target.value=100;e.target.disabled=true;$('give-label').textContent='Demo complete';$('completed').hidden=false}});$('give-swipe').addEventListener('change',e=>{if(Number(e.target.value)<95)e.target.value=0});$('review-again').addEventListener('click',resetGive);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'stage_shopper_brands',description:'Select demo brands and open the planning form. Does not submit orders or donations.',inputSchema:{type:'object',properties:{brandIds:{type:'array',items:{type:'string',enum:products.map(p=>p.id)},minItems:1,uniqueItems:true}},required:['brandIds'],additionalProperties:false},annotations:{readOnlyHint:false},execute(input){if(!Array.isArray(input?.brandIds)||!input.brandIds.length||input.brandIds.some(id=>!products.some(p=>p.id===id)))throw new Error('Provide valid brand IDs.');chosen.clear();input.brandIds.forEach(id=>chosen.add(id));for(const p of products)$('offer-'+p.id).checked=chosen.has(p.id);plan=null;resetGive();updateSelection();go('plan');return{status:'staged',brands:selected().map(p=>p.name)}}})).catch(()=>{})}catch{}}
+
+$('plan-form').addEventListener('input',()=>{plan=null;resetGive()});
