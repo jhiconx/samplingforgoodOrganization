@@ -1,4 +1,4 @@
-# Sampling For Good Shopper
+# Sampling For Good Orgainization
 
 GitHub repository suggestion: samplingforgood-shopper
 
