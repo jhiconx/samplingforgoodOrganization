@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 const products=[
+ {id:'reeds-coffee',name:'Reed’s Coffee',category:'Coffee · art + framing',image:'reeds-coffee.webp',tint:'#fff0f1'},
  {id:'revive',name:'Revive Collagen',category:'Collagen supplement · 8.5 g per serving',image:'revive-collagen.webp',tint:'#fff4f4'},
  {id:'celsius',name:'Celsius',category:'Energy drink',image:'celsius.jpg',tint:'#fff7e7'},
  {id:'alani',name:'Alani Nu',category:'Energy drink',image:'alani.jpg',tint:'#f2e4fc',color:'#824fac'},
