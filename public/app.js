@@ -33,3 +33,24 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'stage_shopper_brands',description:'Select demo brands and open the planning form. Does not submit orders or donations.',inputSchema:{type:'object',properties:{brandIds:{type:'array',items:{type:'string',enum:products.map(p=>p.id)},minItems:1,uniqueItems:true}},required:['brandIds'],additionalProperties:false},annotations:{readOnlyHint:false},execute(input){if(!Array.isArray(input?.brandIds)||!input.brandIds.length||input.brandIds.some(id=>!products.some(p=>p.id===id)))throw new Error('Provide valid brand IDs.');chosen.clear();input.brandIds.forEach(id=>chosen.add(id));for(const p of products)$('offer-'+p.id).checked=chosen.has(p.id);plan=null;resetGive();updateSelection();go('plan');return{status:'staged',brands:selected().map(p=>p.name)}}})).catch(()=>{})}catch{}}
 
 $('plan-form').addEventListener('input',()=>{plan=null;resetGive()});
+
+// Optional browser speech-to-text for the page-three sample request.
+(()=>{
+ const button=$('speak-request'),status=$('voice-status'),field=$('request');
+ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ let recognition=null,active=false;
+ function message(value){status.hidden=!value;status.textContent=value}
+ function listening(value){active=value;button.setAttribute('aria-pressed',String(value));$('speak-label').textContent=value?'Stop':'Speak';button.setAttribute('aria-label',value?'Stop voice input':'Speak your sample request')}
+ button.addEventListener('click',()=>{
+  if(active){recognition?.stop();listening(false);return}
+  if(!SpeechRecognition){message('Voice input is not supported in this browser. Please type your request instead.');return}
+  try{
+   recognition=new SpeechRecognition();recognition.lang=document.documentElement.lang||'en-US';recognition.continuous=false;recognition.interimResults=false;
+   recognition.onresult=event=>{const spoken=Array.from(event.results).map(result=>result[0]?.transcript||'').join(' ').trim();if(spoken){field.value=[field.value.trim(),spoken].filter(Boolean).join(' ');field.dispatchEvent(new Event('input',{bubbles:true}));message('Added your voice request. You can edit it before continuing.')}};
+   recognition.onerror=event=>{message(event.error==='not-allowed'?'Microphone access was denied. Enable microphone permission to speak.':event.error==='no-speech'?'No speech detected. Tap Speak to try again.':'Voice input could not start. You can type your request instead.');listening(false)};
+   recognition.onend=()=>listening(false);
+   recognition.start();listening(true);message('Listening… say what samples you want.');
+  }catch{listening(false);message('Voice input is unavailable. You can type your request instead.')}
+ });
+ window.addEventListener('hashchange',()=>{if(active&&recognition){recognition.stop();listening(false)}});
+})();
