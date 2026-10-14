@@ -8,8 +8,8 @@ async function submissionAllowed(req){
  if(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN){
   const script="local n=redis.call('INCR',KEYS[1]);if n==1 then redis.call('EXPIRE',KEYS[1],60) end;return n";
   const reply=await fetch(process.env.UPSTASH_REDIS_REST_URL.replace(/\/$/,''),{method:'POST',headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(['EVAL',script,1,key])});
-  if(!reply.ok)throw new Error('Rate limit datastore unavailable');
-  const data=await reply.json();if(data.error)throw new Error('Rate limit datastore error');
+  if(!reply.ok)throw new Error('UPSTASH_HTTP_'+reply.status);
+  const data=await reply.json();if(data.error)throw new Error('UPSTASH_COMMAND_ERROR');
   return Number(data.result)<=5;
  }
  const now=Date.now();if(localHits.size>2000)for(const [k,v] of localHits)if(v.expires<=now)localHits.delete(k);
@@ -24,7 +24,7 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed'})}
  if(!process.env.RESEND_API_KEY||!process.env.SAMPLE_FROM_EMAIL)return res.status(503).json({error:'Email service not configured'}); 
- try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch{return res.status(503).json({error:'Please try again shortly.'})}
+ try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch(error){const code=/^UPSTASH_HTTP_[0-9]{3}$|^UPSTASH_COMMAND_ERROR$/.test(error?.message||'')?error.message:'UPSTASH_CONNECTION_ERROR';console.error('Rate limit check failed:',code);return res.status(503).json({error:'Rate limiting service unavailable',code})}
  try{
   const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(raw.length>12000)return res.status(413).json({error:'Request too large'});const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   const phone=clean(body.phone,40),email=clean(body.email,254),charity=clean(body.charity,160),note=clean(body.note,3000);
