@@ -66,3 +66,10 @@ html,body{max-width:100%;overflow-x:clip}
 @keyframes mic-pulse{to{opacity:.45}}
 @media(max-width:760px){.planner{margin-top:16px}.plan-hero{margin-bottom:-12px}.request-entry{gap:7px}.speak-button{padding:10px;min-height:46px}.speak-button span{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.speak-button[aria-pressed="true"] svg{animation:none}}
+
+/* Contact information (at least one method required for review). */
+.contact-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;text-align:left;margin:0 0 6px}
+.contact-fields label{display:block;min-width:0;font-size:14px;font-weight:500}
+.contact-fields input{display:block;width:100%;min-width:0;max-width:100%;height:50px;margin-top:10px;border:1px solid #e5ddeb;background:#fff;border-radius:12px;padding:12px 14px;color:var(--ink);font-size:16px}
+.contact-hint{text-align:left;font-size:12px;color:#887a99;margin:6px 0 20px}
+@media(max-width:760px){.contact-fields{grid-template-columns:minmax(0,1fr);gap:18px}.contact-fields input{height:52px}}
