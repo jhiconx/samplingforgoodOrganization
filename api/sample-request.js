@@ -7,7 +7,10 @@ async function submissionAllowed(req){
  const key='sfg:sample:'+ip;
  if(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN){
   const script="local n=redis.call('INCR',KEYS[1]);if n==1 then redis.call('EXPIRE',KEYS[1],60) end;return n";
-  const reply=await fetch(process.env.UPSTASH_REDIS_REST_URL.replace(/\/$/,''),{method:'POST',headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(['EVAL',script,1,key])});
+  const endpoint=process.env.UPSTASH_REDIS_REST_URL.trim();
+  let redisUrl;try{redisUrl=new URL(endpoint)}catch{throw new Error('UPSTASH_INVALID_URL')}
+  if(redisUrl.protocol!=='https:'||!redisUrl.hostname.endsWith('.upstash.io'))throw new Error('UPSTASH_INVALID_URL');
+  let reply;try{reply=await fetch(redisUrl.toString(),{method:'POST',headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(['EVAL',script,1,key]),signal:AbortSignal.timeout(7000)});}catch(e){const cause=e?.cause?.code||'';if(e?.name==='TimeoutError')throw new Error('UPSTASH_TIMEOUT');if(cause==='ENOTFOUND'||cause==='EAI_AGAIN')throw new Error('UPSTASH_DNS_ERROR');if(cause==='ECONNREFUSED'||cause==='ETIMEDOUT'||cause==='ENETUNREACH')throw new Error('UPSTASH_NETWORK_ERROR');if(String(cause).includes('CERT'))throw new Error('UPSTASH_TLS_ERROR');throw new Error('UPSTASH_FETCH_ERROR')}
   if(!reply.ok)throw new Error('UPSTASH_HTTP_'+reply.status);
   const data=await reply.json();if(data.error)throw new Error('UPSTASH_COMMAND_ERROR');
   return Number(data.result)<=5;
@@ -24,7 +27,7 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed'})}
  if(!process.env.RESEND_API_KEY||!process.env.SAMPLE_FROM_EMAIL)return res.status(503).json({error:'Email service not configured'}); 
- try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch(error){const code=/^UPSTASH_HTTP_[0-9]{3}$|^UPSTASH_COMMAND_ERROR$/.test(error?.message||'')?error.message:'UPSTASH_CONNECTION_ERROR';console.error('Rate limit check failed:',code);return res.status(503).json({error:'Rate limiting service unavailable',code})}
+ try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch(error){const code=/^UPSTASH_(?:HTTP_[0-9]{3}|COMMAND_ERROR|INVALID_URL|TIMEOUT|DNS_ERROR|NETWORK_ERROR|TLS_ERROR|FETCH_ERROR)$/.test(error?.message||'')?error.message:'UPSTASH_CONNECTION_ERROR';console.error('Rate limit check failed:',code);return res.status(503).json({error:'Rate limiting service unavailable',code})}
  try{
   const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(raw.length>12000)return res.status(413).json({error:'Request too large'});const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   const phone=clean(body.phone,40),email=clean(body.email,254),charity=clean(body.charity,160),note=clean(body.note,3000);
