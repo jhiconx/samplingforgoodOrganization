@@ -53,3 +53,16 @@ html,body{max-width:100%;overflow-x:clip}
 .offers-back{display:inline-flex;align-items:center;min-height:44px;padding:8px 0;margin:0 0 14px;font-size:15px;font-weight:700;color:#7752bd}
 
 .charity-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.charity-head .charity-title{margin-bottom:8px}.charity-custom-label{font-size:13px;font-weight:700;color:#7951b5}.charity-custom-input{width:100%;max-width:100%;height:48px;border:1px solid #e6dcef;border-radius:12px;padding:12px 14px;font-size:16px;margin:4px 0 16px;background:#fff}.charity-custom-input:focus{outline:2px solid #9168e8;outline-offset:2px}
+
+/* Page 3: bring the Sample AI hero upward and reserve space for voice input. */
+.plan-hero{transform:translateY(-12%);margin-bottom:-18px}
+.planner{margin-top:22px}
+.request-entry{display:flex;align-items:flex-end;gap:12px;min-width:0}
+.request-entry textarea{flex:1;min-width:0}
+.speak-button{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:7px;min-height:48px;padding:10px 14px;margin-bottom:4px;border:1px solid #e6dcef;border-radius:14px;background:#f7f1fe;color:#7650b7;font-size:14px;font-weight:700;cursor:pointer}
+.speak-button:hover,.speak-button[aria-pressed="true"]{border-color:#9560ed;background:#ede0ff;color:#6430ad}
+.speak-button[aria-pressed="true"] svg{animation:mic-pulse 1s ease-in-out infinite alternate}
+.voice-status{font-size:12px;line-height:1.4;margin:7px 0 0;color:#7650b7}
+@keyframes mic-pulse{to{opacity:.45}}
+@media(max-width:760px){.planner{margin-top:16px}.plan-hero{margin-bottom:-12px}.request-entry{gap:7px}.speak-button{padding:10px;min-height:46px}.speak-button span{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.speak-button[aria-pressed="true"] svg{animation:none}}
