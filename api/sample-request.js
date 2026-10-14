@@ -34,9 +34,8 @@ export default async function handler(req,res){
   const organization=clean(body.organization,180),university=clean(body.university,180),chapter=clean(body.chapter,180),contactName=clean(body.contactName,180);
   const brands=Array.isArray(body.brands)?body.brands.filter(b=>b&&ALLOWED.has(b.id)).slice(0,15):[];
   if(brands.some(b=>b.id==='brand-request'&&(!clean(b.name,120)||clean(b.name,120)==='Brand Request')))return res.status(400).json({error:'Requested brand name required'});
-  const quantity=body.quantity===null||body.quantity===''?null:Number(body.quantity);
-  const date=clean(body.date,20);
-  if(organization.length<2||!brands.length||!(validEmail(email)||validPhone(phone))||(email&&!validEmail(email))||(phone&&!validPhone(phone))||(quantity!==null&&(!Number.isInteger(quantity)||quantity<1||quantity>10000))||(date&&!/^\d{4}-\d{2}-\d{2}$/.test(date)))return res.status(400).json({error:'Invalid request'});
+  const totalMembers=body.totalMembers===null||body.totalMembers===undefined||body.totalMembers===''?null:Number(body.totalMembers);
+  if(organization.length<2||!brands.length||!(validEmail(email)||validPhone(phone))||(email&&!validEmail(email))||(phone&&!validPhone(phone))||(totalMembers!==null&&(!Number.isInteger(totalMembers)||totalMembers<1||totalMembers>100000)))return res.status(400).json({error:'Invalid request'});
 
   // Persist validated requests in Supabase when credentials are configured.
   // Service-role credentials remain exclusively in the server environment.
@@ -46,11 +45,11 @@ export default async function handler(req,res){
    let endpoint;
    try{endpoint=new URL('/rest/v1/sfg_distribution_requests',dbUrl);if(endpoint.protocol!=='https:')throw new Error('invalid protocol')}catch{return res.status(503).json({error:'Database configuration invalid'})}
    let save;
-   try{save=await fetch(endpoint,{method:'POST',headers:{apikey:dbKey,Authorization:'Bearer '+dbKey,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({organization_name:organization,university,chapter,contact_name:contactName,email,phone,brands:brands.map(b=>({id:b.id,name:clean(b.name,120)})),requested_ship_date:date||null,quantity_per_brand:quantity,charity_name:charity||'Make-A-Wish Foundation',notes:note,status:'received'}) ,signal:AbortSignal.timeout(8000)})}catch{console.error('Supabase request write connection failed');return res.status(503).json({error:'Request storage unavailable'})}
+   try{save=await fetch(endpoint,{method:'POST',headers:{apikey:dbKey,Authorization:'Bearer '+dbKey,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({organization_name:organization,university,chapter,contact_name:contactName,email,phone,brands:brands.map(b=>({id:b.id,name:clean(b.name,120)})),total_members:totalMembers,charity_name:charity||'Make-A-Wish Foundation',notes:note,status:'received'}) ,signal:AbortSignal.timeout(8000)})}catch{console.error('Supabase request write connection failed');return res.status(503).json({error:'Request storage unavailable'})}
    if(!save.ok){console.error('Supabase request write rejected',save.status);return res.status(503).json({error:'Request storage unavailable'})}
    const rows=await save.json();requestId=rows?.[0]?.id||null;
   }
-  const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Requested shipping date: '+(date||'Not specified'),'Samples per brand: '+(quantity??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
+  const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Organization: '+organization,'University: '+(university||'Not specified'),'Chapter: '+(chapter||'Not specified'),'Contact: '+(contactName||'Not specified'),'Total members: '+(totalMembers??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
   const result=await fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.SAMPLE_FROM_EMAIL,to:['samples@iconx.io'],subject:'New Sampling For Good sample request',text:lines.join('\n'),...(email?{reply_to:email}:{})})});
   if(!result.ok){console.error('Sample mail provider rejected request',result.status);return res.status(502).json({error:'Email could not be sent'})}
   return res.status(200).json({ok:true,requestId,stored:!!requestId});
