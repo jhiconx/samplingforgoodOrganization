@@ -84,3 +84,10 @@ html,body{max-width:100%;overflow-x:clip}
 .requested-brand-entry input{width:100%;min-width:0;font-size:16px;border:1px solid #dccde9;border-radius:10px;padding:11px;background:white;color:#201b29}
 .requested-brand-entry input:focus{outline:2px solid #8859ef}
 @media(max-width:760px){.requested-brand-entry{padding:0 12px 14px}.requested-brand-entry input{font-size:16px}.offer-card .product-art .revive-company-logo{width:90px;height:28px}}
+
+/* Keep Brand Request input in the card's white content area, not absolutely positioned over artwork. */
+.offer-card .requested-brand-entry{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:0 16px 18px;min-width:0;background:#fff;z-index:1}
+.offer-card .requested-brand-entry label{position:static;display:block;width:100%;margin:0;line-height:1.4}
+.offer-card .requested-brand-entry input{position:static;inset:auto;z-index:auto;display:block;box-sizing:border-box;width:100%;height:48px;margin:0;min-width:0;max-width:100%;padding:10px 12px;border:1px solid #dccde9;border-radius:10px;background:white;line-height:1.3;font-size:16px;cursor:text;accent-color:auto}
+.offer-card:has(#offer-brand-request) .product-info{padding-bottom:14px}
+@media(max-width:760px){.offer-card .requested-brand-entry{padding:0 12px 16px}.offer-card .requested-brand-entry input{height:48px}}
