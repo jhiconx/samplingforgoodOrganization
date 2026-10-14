@@ -73,3 +73,14 @@ html,body{max-width:100%;overflow-x:clip}
 .contact-fields input{display:block;width:100%;min-width:0;max-width:100%;height:50px;margin-top:10px;border:1px solid #e5ddeb;background:#fff;border-radius:12px;padding:12px 14px;color:var(--ink);font-size:17.28px}
 .contact-hint{text-align:left;font-size:12.96px;color:#887a99;margin:6px 0 20px}
 @media(max-width:760px){.contact-fields{grid-template-columns:minmax(0,1fr);gap:18px}.contact-fields input{height:52px}}
+
+/* Featured Revive offer and custom brand request */
+.offer-card .product-art{position:relative}
+.offer-card .product-art .revive-company-logo{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:110px;height:34px;object-fit:contain;max-height:34px}
+.offer-card:has(#offer-revive) .product-art>img:first-child{max-height:104px;margin-top:-20px}
+.request-icon{font-size:72px;font-weight:300;line-height:1;color:#8b59e9}
+.requested-brand-entry{padding:0 16px 17px}
+.requested-brand-entry label{display:block;font-size:13px;color:#755b8d;margin:0 0 7px;font-weight:700}
+.requested-brand-entry input{width:100%;min-width:0;font-size:16px;border:1px solid #dccde9;border-radius:10px;padding:11px;background:white;color:#201b29}
+.requested-brand-entry input:focus{outline:2px solid #8859ef}
+@media(max-width:760px){.requested-brand-entry{padding:0 12px 14px}.requested-brand-entry input{font-size:16px}.offer-card .product-art .revive-company-logo{width:90px;height:28px}}
