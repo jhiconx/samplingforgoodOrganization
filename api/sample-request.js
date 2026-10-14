@@ -23,6 +23,44 @@ const ALLOWED = new Set(['revive','brand-request','celsius','alani','pibb','migh
 function clean(value,limit=500){return String(value??'').trim().slice(0,limit)}
 function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
 function validPhone(v){const digits=v.replace(/\D/g,'');return digits.length>=7&&digits.length<=15}
+
+async function supabaseRest(dbUrl,dbKey,resource,options={}){
+ const target=new URL('/rest/v1/'+resource,dbUrl);
+ if(target.protocol!=='https:')throw new Error('Bad database URL');
+ return fetch(target,{...options,headers:{apikey:dbKey,Authorization:'Bearer '+dbKey,'Content-Type':'application/json',...(options.headers||{})},signal:AbortSignal.timeout(8000)});
+}
+async function notifySelectedBrands({dbUrl,dbKey,requestId,brands,organization,university,totalMembers,charity}){
+ if(!dbUrl||!dbKey||!requestId)return;
+ const ids=brands.filter(b=>b.id!=='brand-request').map(b=>b.id);
+ if(!ids.length)return;
+ const query='sfg_brand_contacts?select=brand_id,brand_name,notification_email,email_enabled,approved_for_outreach&brand_id=in.('+ids.map(encodeURIComponent).join(',')+')';
+ const contactsResponse=await supabaseRest(dbUrl,dbKey,query);
+ if(!contactsResponse.ok)throw new Error('Brand directory unavailable');
+ const contacts=await contactsResponse.json();
+ const byId=new Map(contacts.map(c=>[c.brand_id,c]));
+ for(const brand of brands){
+  if(brand.id==='brand-request')continue; // Unlisted brands have no approved recipient.
+  const contact=byId.get(brand.id);
+  if(!contact?.approved_for_outreach||!contact.email_enabled||!validEmail(contact.notification_email||''))continue;
+  const record={request_id:requestId,brand_id:brand.id,brand_name:contact.brand_name||brand.name,channel:'email',state:'pending'};
+  const inserted=await supabaseRest(dbUrl,dbKey,'sfg_brand_notifications?on_conflict=request_id,brand_id,channel',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify(record)});
+  if(!inserted.ok)throw new Error('Notification log write failed');
+  const fresh=await inserted.json();
+  if(!fresh.length)continue; // Idempotent: already sent or attempted.
+  const notificationId=fresh[0].id;
+  const safe=v=>String(v||'Not specified').replace(/[\r\n]+/g,' ').slice(0,180);
+  const message='Hello, '+safe(organization)+' from '+safe(university)+' with a membership of '+(totalMembers??'not specified')+' wants to run a Sample For Good program with their non-profit partner '+safe(charity)+'. Please reach out to Reed Cramer at rcramer@iconx.io for next steps.';
+  let state='failed',providerId=null,errorCode=null;
+  try{
+   const emailResult=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.SAMPLE_FROM_EMAIL,to:[contact.notification_email],subject:'Sample For Good program request — '+safe(contact.brand_name||brand.name),text:message})});
+   if(emailResult.ok){state='sent';const data=await emailResult.json();providerId=data.id||null}
+   else errorCode='RESEND_'+emailResult.status;
+  }catch{errorCode='SEND_EXCEPTION'}
+  const update=await supabaseRest(dbUrl,dbKey,'sfg_brand_notifications?id=eq.'+notificationId,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({state,provider_id:providerId,error_code:errorCode,sent_at:state==='sent'?new Date().toISOString():null})});
+  if(!update.ok)console.error('Brand notification audit update failed');
+ }
+}
+
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed'})}
@@ -52,6 +90,7 @@ export default async function handler(req,res){
   const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Organization: '+organization,'University: '+(university||'Not specified'),'Chapter: '+(chapter||'Not specified'),'Contact: '+(contactName||'Not specified'),'Total members: '+(totalMembers??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
   const result=await fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.SAMPLE_FROM_EMAIL,to:['samples@iconx.io'],subject:'New Sampling For Good sample request',text:lines.join('\n'),...(email?{reply_to:email}:{})})});
   if(!result.ok){console.error('Sample mail provider rejected request',result.status);return res.status(502).json({error:'Email could not be sent'})}
+  try{await notifySelectedBrands({dbUrl,dbKey,requestId,brands,organization,university,totalMembers,charity:charity||'Make-A-Wish Foundation'})}catch(error){console.error('Brand notification processing failed:',error?.message)}
   return res.status(200).json({ok:true,requestId,stored:!!requestId});
  }catch(error){console.error('Sample request email failure',error?.message);return res.status(500).json({error:'Email could not be sent'})}
 }
