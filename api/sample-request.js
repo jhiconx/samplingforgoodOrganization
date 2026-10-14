@@ -23,7 +23,8 @@ function validPhone(v){const digits=v.replace(/\D/g,'');return digits.length>=7&
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed'})}
- if(!process.env.RESEND_API_KEY||!process.env.SAMPLE_FROM_EMAIL)return res.status(503).json({error:'Email service not configured'});\n try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch{return res.status(503).json({error:'Please try again shortly.'})}
+ if(!process.env.RESEND_API_KEY||!process.env.SAMPLE_FROM_EMAIL)return res.status(503).json({error:'Email service not configured'}); 
+ try{if(!await submissionAllowed(req)){res.setHeader('Retry-After','60');return res.status(429).json({error:'Too many requests. Please wait a minute and try again.'})}}catch{return res.status(503).json({error:'Please try again shortly.'})}
  try{
   const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(raw.length>12000)return res.status(413).json({error:'Request too large'});const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   const phone=clean(body.phone,40),email=clean(body.email,254),charity=clean(body.charity,160),note=clean(body.note,3000);
