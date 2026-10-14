@@ -47,3 +47,5 @@ html,body{max-width:100%;overflow-x:clip}
  .logo-home img{width:110px}
  .sponsor-confirm{padding:12px}
 }
+
+.charity-choice{border:1px solid #e9e0f0;border-radius:16px;padding:18px;text-align:left;background:#fff}.charity-title{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#947dac;font-weight:700;margin-bottom:14px}.charity-line{display:flex;align-items:center;gap:18px;min-width:0}.charity-line img{width:106px;max-width:32%;height:auto;object-fit:contain}.charity-line>div{min-width:0}.charity-line strong{display:block;font-size:15px}.charity-line small{display:block;margin-top:6px;font-size:12px;line-height:1.4;color:#9584a2}@media(max-width:440px){.charity-line{gap:12px}.charity-line img{width:90px}.charity-choice{padding:16px}}
