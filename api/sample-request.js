@@ -7,7 +7,7 @@ async function submissionAllowed(req){
  const key='sfg:sample:'+ip;
  if(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN){
   const script="local n=redis.call('INCR',KEYS[1]);if n==1 then redis.call('EXPIRE',KEYS[1],60) end;return n";
-  const reply=await fetch(process.env.UPSTASH_REDIS_REST_URL+'/eval',{method:'POST',headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},body:JSON.stringify([script,1,key])});
+  const reply=await fetch(process.env.UPSTASH_REDIS_REST_URL.replace(/\/$/,''),{method:'POST',headers:{Authorization:'Bearer '+process.env.UPSTASH_REDIS_REST_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(['EVAL',script,1,key])});
   if(!reply.ok)throw new Error('Rate limit datastore unavailable');
   const data=await reply.json();if(data.error)throw new Error('Rate limit datastore error');
   return Number(data.result)<=5;
