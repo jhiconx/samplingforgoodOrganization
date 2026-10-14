@@ -19,7 +19,7 @@ async function submissionAllowed(req){
  const entry=localHits.get(key);if(!entry||entry.expires<=now){localHits.set(key,{count:1,expires:now+60000});return true}
  entry.count++;return entry.count<=5;
 }
-const ALLOWED = new Set(['celsius','alani','pibb','mighty','redbull','olipop','claude','dove','bumblebee','martie','poppi','elf','starface']);
+const ALLOWED = new Set(['revive','brand-request','celsius','alani','pibb','mighty','redbull','olipop','claude','dove','bumblebee','martie','poppi','elf','starface']);
 function clean(value,limit=500){return String(value??'').trim().slice(0,limit)}
 function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
 function validPhone(v){const digits=v.replace(/\D/g,'');return digits.length>=7&&digits.length<=15}
@@ -31,11 +31,12 @@ export default async function handler(req,res){
  try{
   const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(raw.length>12000)return res.status(413).json({error:'Request too large'});const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   const phone=clean(body.phone,40),email=clean(body.email,254),charity=clean(body.charity,160),note=clean(body.note,3000);
-  const brands=Array.isArray(body.brands)?body.brands.filter(b=>b&&ALLOWED.has(b.id)).slice(0,13):[];
+  const brands=Array.isArray(body.brands)?body.brands.filter(b=>b&&ALLOWED.has(b.id)).slice(0,15):[];
+  if(brands.some(b=>b.id==='brand-request'&&(!clean(b.name,120)||clean(b.name,120)==='Brand Request')))return res.status(400).json({error:'Requested brand name required'});
   const quantity=body.quantity===null||body.quantity===''?null:Number(body.quantity);
   const date=clean(body.date,20);
   if(!brands.length||!(validEmail(email)||validPhone(phone))||(email&&!validEmail(email))||(phone&&!validPhone(phone))||(quantity!==null&&(!Number.isInteger(quantity)||quantity<1||quantity>10000))||(date&&!/^\d{4}-\d{2}-\d{2}$/.test(date)))return res.status(400).json({error:'Invalid request'});
-  const lines=['New Sampling For Good request','',...brands.map(b=>'Brand: '+clean(b.name,100)),'','Requested shipping date: '+(date||'Not specified'),'Samples per brand: '+(quantity??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
+  const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Requested shipping date: '+(date||'Not specified'),'Samples per brand: '+(quantity??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
   const result=await fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.SAMPLE_FROM_EMAIL,to:['samples@iconx.io'],subject:'New Sampling For Good sample request',text:lines.join('\n'),...(email?{reply_to:email}:{})})});
   if(!result.ok){console.error('Sample mail provider rejected request',result.status);return res.status(502).json({error:'Email could not be sent'})}
   return res.status(200).json({ok:true});
