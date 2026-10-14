@@ -1,11 +1,11 @@
 const $=id=>document.getElementById(id);
 const products=[
- {id:'reeds-coffee',name:'Reed’s Coffee',category:'Coffee · art + framing',image:'reeds-coffee.webp',tint:'#fff0f1'},
  {id:'revive',name:'Revive Collagen',category:'Collagen supplement · 8.5 g per serving',image:'revive-collagen.webp',tint:'#fff4f4'},
  {id:'celsius',name:'Celsius',category:'Energy drink',image:'celsius.jpg',tint:'#fff7e7'},
  {id:'alani',name:'Alani Nu',category:'Energy drink',image:'alani.jpg',tint:'#f2e4fc',color:'#824fac'},
  {id:'pibb',name:'Mr. Pibb Zero Sugar',category:'Zero sugar soda',image:'pibb.jpg',tint:'#f5e8e6',color:'#821c27'},
  {id:'mighty',name:'Mighty Spark Chicken Snack Sticks',category:'Savory snack',image:'mighty-spark.jpg',tint:'#eaf5e8'},
+ {id:'reeds-coffee',name:'Reed’s Coffee',category:'Coffee · art + framing',image:'reeds-coffee.webp',tint:'#fff0f1'},
  {id:'redbull',name:'Red Bull',category:'Energy drink',image:'redbull.jpg',tint:'#edf1ff',color:'#d53644'},
  {id:'olipop',name:'Olipop',category:'Soda',image:'olipop.jpg',tint:'#edf5e8',color:'#386443'},
  {id:'claude',name:'Claude 1 Month',category:'Digital offer · One month',image:'claude.png',tint:'#faf1eb'},
