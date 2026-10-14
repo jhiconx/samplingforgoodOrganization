@@ -98,3 +98,8 @@ html,body{max-width:100%;overflow-x:clip}
 .partner-fields input{box-sizing:border-box;width:100%;height:50px;min-width:0;border:1px solid #e5ddeb;border-radius:12px;padding:12px;font-size:16px;margin-top:8px;background:white}
 .partner-fields .contact-fields{margin:12px 0}
 @media(max-width:760px){.partner-fields{padding:16px}}
+
+/* Group all contact inputs in the same card. */
+.partner-fields .contact-hint{margin:7px 0 0}
+.partner-fields>.contact-fields{margin:14px 0 0}
+.partner-fields>label{margin-top:0}
