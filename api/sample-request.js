@@ -69,7 +69,7 @@ export default async function handler(req,res){
  try{
   const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(raw.length>12000)return res.status(413).json({error:'Request too large'});const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
   const phone=clean(body.phone,40),email=clean(body.email,254),charity=clean(body.charity,160),note=clean(body.note,3000);
-  const organization=clean(body.organization,180),university=clean(body.university,180),chapter=clean(body.chapter,180),contactName=clean(body.contactName,180);
+  const organization=clean(body.organization,180),university=clean(body.university,180),contactName=clean(body.contactName,180);
   const brands=Array.isArray(body.brands)?body.brands.filter(b=>b&&ALLOWED.has(b.id)).slice(0,15):[];
   if(brands.some(b=>b.id==='brand-request'&&(!clean(b.name,120)||clean(b.name,120)==='Brand Request')))return res.status(400).json({error:'Requested brand name required'});
   const totalMembers=body.totalMembers===null||body.totalMembers===undefined||body.totalMembers===''?null:Number(body.totalMembers);
@@ -83,11 +83,11 @@ export default async function handler(req,res){
    let endpoint;
    try{endpoint=new URL('/rest/v1/sfg_distribution_requests',dbUrl);if(endpoint.protocol!=='https:')throw new Error('invalid protocol')}catch{return res.status(503).json({error:'Database configuration invalid'})}
    let save;
-   try{save=await fetch(endpoint,{method:'POST',headers:{apikey:dbKey,Authorization:'Bearer '+dbKey,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({organization_name:organization,university,chapter,contact_name:contactName,email,phone,brands:brands.map(b=>({id:b.id,name:clean(b.name,120)})),total_members:totalMembers,charity_name:charity||'Make-A-Wish Foundation',notes:note,status:'received'}) ,signal:AbortSignal.timeout(8000)})}catch{console.error('Supabase request write connection failed');return res.status(503).json({error:'Request storage unavailable'})}
+   try{save=await fetch(endpoint,{method:'POST',headers:{apikey:dbKey,Authorization:'Bearer '+dbKey,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({organization_name:organization,university,contact_name:contactName,email,phone,brands:brands.map(b=>({id:b.id,name:clean(b.name,120)})),total_members:totalMembers,charity_name:charity||'Make-A-Wish Foundation',notes:note,status:'received'}) ,signal:AbortSignal.timeout(8000)})}catch{console.error('Supabase request write connection failed');return res.status(503).json({error:'Request storage unavailable'})}
    if(!save.ok){console.error('Supabase request write rejected',save.status);return res.status(503).json({error:'Request storage unavailable'})}
    const rows=await save.json();requestId=rows?.[0]?.id||null;
   }
-  const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Organization: '+organization,'University: '+(university||'Not specified'),'Chapter: '+(chapter||'Not specified'),'Contact: '+(contactName||'Not specified'),'Total members: '+(totalMembers??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
+  const lines=['New Sampling For Good request','',...brands.map(b=>(b.id==='brand-request'?'Requested brand: ':'Brand: ')+clean(b.name,120)),'','Organization: '+organization,'University: '+(university||'Not specified'),'Contact: '+(contactName||'Not specified'),'Total members: '+(totalMembers??'Not specified'),'Charity: '+(charity||'Not specified'),'Phone: '+(phone||'Not provided'),'Email: '+(email||'Not provided'),'','Sample instructions:',note||'None supplied'];
   const result=await fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+process.env.RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({from:process.env.SAMPLE_FROM_EMAIL,to:['samples@iconx.io'],subject:'New Sampling For Good sample request',text:lines.join('\n'),...(email?{reply_to:email}:{})})});
   if(!result.ok){console.error('Sample mail provider rejected request',result.status);return res.status(502).json({error:'Email could not be sent'})}
   try{await notifySelectedBrands({dbUrl,dbKey,requestId,brands,organization,university,totalMembers,charity:charity||'Make-A-Wish Foundation'})}catch(error){console.error('Brand notification processing failed:',error?.message)}
