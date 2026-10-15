@@ -103,3 +103,5 @@ html,body{max-width:100%;overflow-x:clip}
 .partner-fields .contact-hint{margin:7px 0 0}
 .partner-fields>.contact-fields{margin:14px 0 0}
 .partner-fields>label{margin-top:0}
+
+.charitable-powered{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.charitable-powered strong{font-size:16px;font-weight:700}.charitable-powered img{width:190px;max-width:65%;height:auto;mix-blend-mode:multiply}@media(max-width:440px){.charitable-powered img{width:170px;max-width:100%}}
