@@ -19,7 +19,7 @@ async function submissionAllowed(req){
  const entry=localHits.get(key);if(!entry||entry.expires<=now){localHits.set(key,{count:1,expires:now+60000});return true}
  entry.count++;return entry.count<=5;
 }
-const ALLOWED = new Set(['reeds-coffee','revive','brand-request','celsius','alani','pibb','mighty','redbull','olipop','claude','dove','bumblebee','martie','poppi','elf','starface']);
+const ALLOWED = new Set(['liquid-death','reeds-coffee','revive','brand-request','celsius','alani','pibb','mighty','redbull','olipop','claude','dove','bumblebee','martie','poppi','elf','starface']);
 function clean(value,limit=500){return String(value??'').trim().slice(0,limit)}
 function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
 function validPhone(v){const digits=v.replace(/\D/g,'');return digits.length>=7&&digits.length<=15}
