@@ -6,6 +6,7 @@ const products=[
  {id:'pibb',name:'Mr. Pibb Zero Sugar',category:'Zero sugar soda',image:'pibb.jpg',tint:'#f5e8e6',color:'#821c27'},
  {id:'mighty',name:'Mighty Spark Chicken Snack Sticks',category:'Savory snack',image:'mighty-spark.jpg',tint:'#eaf5e8'},
  {id:'reeds-coffee',name:'Reed’s Coffee',category:'Coffee · art + framing',image:'reeds-coffee.webp',tint:'#fff0f1'},
+ {id:'liquid-death',name:'Liquid Death',category:'Sparkling water',image:'liquid-death.webp',tint:'#f1f0ed'},
  {id:'redbull',name:'Red Bull',category:'Energy drink',image:'redbull.jpg',tint:'#edf1ff',color:'#d53644'},
  {id:'olipop',name:'Olipop',category:'Soda',image:'olipop.jpg',tint:'#edf5e8',color:'#386443'},
  {id:'claude',name:'Claude 1 Month',category:'Digital offer · One month',image:'claude.png',tint:'#faf1eb'},
