@@ -1,0 +1,1 @@
+{"version":2,"framework":null,"rewrites":[{"source":"/api/sample-request","destination":"https://samplingforgood-b5ld.vercel.app/api/sample-request"}]}
